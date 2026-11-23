@@ -151,7 +151,52 @@ function iniciarCamara(modo) {
 }
 
 /* -------------------------------------------------------------------------
-   5. FLUJO DE PRE-PERMISO (Fragmento E — UX ética)
+   5. CONSENTIMIENTO PERSISTENTE POR DISPOSITIVO (localStorage)
+   Si el usuario ya aceptó el aviso de privacidad una vez, se guarda un flag
+   y el aviso NO se vuelve a mostrar en este dispositivo.
+   Nota: es un flag de UI simple; solo lo consume hilo principal (app.js),
+   por eso localStorage sí es suficiente aquí (no necesita leerlo sw.js).
+   ------------------------------------------------------------------------- */
+const CLAVE_CONSENTIMIENTO = 'pwa-camara-consentimiento-v1';
+
+function hayConsentimiento() {
+  try {
+    return window.localStorage.getItem(CLAVE_CONSENTIMIENTO) === 'aceptado';
+  } catch (error) {
+    console.warn('[Consentimiento] localStorage no disponible:', error);
+    return false;
+  }
+}
+
+function guardarConsentimiento() {
+  try {
+    window.localStorage.setItem(CLAVE_CONSENTIMIENTO, 'aceptado');
+  } catch (error) {
+    console.warn('[Consentimiento] No se pudo guardar:', error);
+  }
+}
+
+function olvidarConsentimiento() {
+  try {
+    window.localStorage.removeItem(CLAVE_CONSENTIMIENTO);
+  } catch (error) {
+    console.warn('[Consentimiento] No se pudo eliminar:', error);
+  }
+}
+
+// Alterna entre "Solicitar Acceso" (primera vez) y "Encender Cámara" (ya aceptado)
+function sincronizarBotonesConsentimiento() {
+  const aceptado = hayConsentimiento();
+  document.getElementById('btn-preparar-camara').hidden = aceptado;
+  document.getElementById('btn-encender-camara').hidden = !aceptado;
+  document.getElementById('btn-olvidar-consentimiento').hidden = !aceptado;
+}
+
+// Aplicar el estado guardado en cuanto carga la página
+sincronizarBotonesConsentimiento();
+
+/* -------------------------------------------------------------------------
+   6. FLUJO DE PRE-PERMISO (Fragmento E — UX ética)
    ------------------------------------------------------------------------- */
 
 // Paso 1: el usuario pide acceso -> solo mostramos el aviso explicativo
@@ -162,8 +207,24 @@ document.getElementById('btn-preparar-camara').addEventListener('click', functio
 // Paso 2: el usuario confirma conscientemente -> AHORA sí se pide el hardware
 document.getElementById('btn-confirmar-permiso').addEventListener('click', function () {
   avisoPermiso.hidden = true;
+  guardarConsentimiento();          // Una sola vez por dispositivo
+  sincronizarBotonesConsentimiento();
   usuarioQuiereCamara = true;
   iniciarCamara(modoCamaraActual);
+});
+
+// Encendido directo: el aviso ya se aceptó antes en ESTE dispositivo,
+// por lo que no se vuelve a mostrar ni se vuelve a preguntar
+document.getElementById('btn-encender-camara').addEventListener('click', function () {
+  usuarioQuiereCamara = true;
+  iniciarCamara(modoCamaraActual);
+});
+
+// Borra el consentimiento guardado (para volver a demostrar el pre-permiso)
+document.getElementById('btn-olvidar-consentimiento').addEventListener('click', function () {
+  olvidarConsentimiento();
+  sincronizarBotonesConsentimiento();
+  actualizarMensajeEstado('Consentimiento reiniciado: se mostrará el aviso de privacidad de nuevo.');
 });
 
 // El usuario se arrepiente: nunca se llega a invocar getUserMedia
@@ -173,7 +234,7 @@ document.getElementById('btn-cancelar-permiso').addEventListener('click', functi
 });
 
 /* -------------------------------------------------------------------------
-   6. BOTONES DE HARDWARE (Desafío de Ensamblado 2)
+   7. BOTONES DE HARDWARE (Desafío de Ensamblado 2)
    ------------------------------------------------------------------------- */
 
 // Alternar lentes environment <-> user
@@ -197,7 +258,7 @@ document.getElementById('btn-apagar-camara').addEventListener('click', function 
 });
 
 /* -------------------------------------------------------------------------
-   7. LIBERACIÓN AUTOMÁTICA DEL SENSOR AL SALIR / CAMBIAR DE PESTAÑA
+   8. LIBERACIÓN AUTOMÁTICA DEL SENSOR AL SALIR / CAMBIAR DE PESTAÑA
    ------------------------------------------------------------------------- */
 window.addEventListener('pagehide', function () {
   detenerCamaraActiva();

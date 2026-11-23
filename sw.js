@@ -5,7 +5,7 @@
    100% Vanilla JS — asincronía solo con .then() / .catch().
    ========================================================================= */
 
-const CACHE_NAME = 'static-camara-v1';
+const CACHE_NAME = 'static-camara-v2';
 
 const STATIC_FILES = [
   './',

@@ -29,10 +29,19 @@
       <p id="mensaje-estado" class="estado">Cámara apagada. Pulsa "Solicitar Acceso a Cámara" para comenzar.</p>
 
       <div class="controles">
+        <!-- Visible solo la PRIMERA vez (sin consentimiento guardado) -->
         <button id="btn-preparar-camara" type="button">Solicitar Acceso a Cámara</button>
+        <!-- Visible cuando ya se aceptó el aviso: enciende sin volver a preguntar -->
+        <button id="btn-encender-camara" type="button" hidden>Encender Cámara</button>
         <button id="btn-alternar-camara" type="button" class="secundario">Alternar Cámara</button>
         <button id="btn-apagar-camara" type="button" class="peligro">Apagar Cámara</button>
       </div>
+      <p class="pie">
+        <!-- Borra el consentimiento guardado para volver a mostrar el aviso de privacidad -->
+        <button id="btn-olvidar-consentimiento" type="button" class="texto" hidden>
+          Reiniciar consentimiento (mostrar aviso de privacidad)
+        </button>
+      </p>
     </section>
 
     <!-- Tarjeta de pre-permiso (UX ética): oculta por defecto -->
